@@ -35,10 +35,29 @@ app.post('/api/login', (req, res) => {
       res.status(401).json({ error: 'Invalid username or password' });
     } else {
       const user = results[0];
-      res.status(200).json({ message: 'User authenticated successfully', role: user.role, userId:user.id });
+      res.status(200).json({ message: 'User authenticated successfully', role: user.role, userId: user.id, user_type: user.user_type, userName: user.username, userSkills: user.user_skills });
     }
   });
 });
+
+app.post('/api/getuserSkills', (req, res) => {
+  const { userId } = req.body;
+  const query = 'SELECT * FROM users WHERE id = ? ';
+  connection.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error authenticating user:', err);
+      res.status(500).json({ error: 'Error authenticating user' });
+      return;
+    }
+    if (results.length === 0) {
+      res.status(401).json({ error: 'Invalid username or password' });
+    } else {
+      res.status(200).json({ message: 'User authenticated successfully', userSkills: results[0].user_skills });
+    }
+  });
+});
+
+
 
 app.post('/api/usersList', (req, res) => {
   const query = 'SELECT * FROM users';
@@ -49,8 +68,21 @@ app.post('/api/usersList', (req, res) => {
       return;
     }
     if (results) {
-      const user = results;
-      res.status(200).json({ message: 'sucess', data: user});
+      res.status(200).json({ message: 'sucess', data: results });
+    }
+  });
+});
+
+app.post('/api/userSkills', (req, res) => {
+  const query = 'SELECT * FROM skill';
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error getting user:', err);
+      res.status(500).json({ error: 'Error getting user' });
+      return;
+    }
+    if (results) {
+      res.status(200).json({ message: 'sucess', data: results });
     }
   });
 });
@@ -61,39 +93,23 @@ app.post('/api/users', (req, res) => {
   connection.query(query, [username, password, email, role, user_type], (err, results) => {
     if (err) {
       console.error('Error creating user:', err);
-      res.status(500).json({ error: 'Error creating user' });
+      res.status(500).json({ error: 'Error creating user', errorMessage: err.sqlMessage });
       return;
     }
     res.status(201).json({ message: 'User created successfully' });
   });
 });
 
-app.post('/api/employees', (req, res) => {
-    const { name, skills } = req.body;
-    const query = 'INSERT INTO employees (name, skills) VALUES (?, ?)';
-    connection.query(query, [name, JSON.stringify(skills)], (err, results) => {
-      if (err) {
-        console.error('Error storing employee skills:', err);
-        res.status(500).json({ error: 'Error storing employee skills' });
-        return;
-      }
-      res.status(201).json({ message: 'Employee skills stored successfully' });
-    });
-  });
-
-app.post('/api/getemployee', (req, res) => {
-  const query = 'SELECT * FROM employees';
-  connection.query(query, (err, results) => {
+app.post('/api/setskills', (req, res) => {
+  const { user_type_id, skill_name } = req.body;
+  const query = 'INSERT INTO skill (user_type_id, skill_name) VALUES (?, ?)';
+  connection.query(query, [user_type_id, skill_name], (err, results) => {
     if (err) {
-      console.error('Error getting employees', err);
-      res.status(500).json({ error: 'Error getting employees' });
+      console.error('Error storing employee skills:', err);
+      res.status(500).json({ error: 'Error storing employee skills', errorMessage: err.sqlMessage });
       return;
     }
-    if (results.length === 0) {
-      res.status(401).json({ error: 'No Employees Found' });
-    } else {
-      res.status(200).json({ success: true , results });
-    }
+    res.status(201).json({ message: 'Employee skills stored successfully' });
   });
 });
 
@@ -101,14 +117,14 @@ app.post('/api/userType', (req, res) => {
   const query = 'SELECT * FROM user_type';
   connection.query(query, (err, results) => {
     if (err) {
-      console.error('Error getting employees', err);
-      res.status(500).json({ error: 'Error getting employees' });
+      console.error('Error getting user type', err);
+      res.status(500).json({ error: 'Error getting user type' });
       return;
     }
     if (results.length === 0) {
-      res.status(401).json({ error: 'No Employees Found' });
+      res.status(401).json({ error: 'No user type Found' });
     } else {
-      res.status(200).json({ success: true , results });
+      res.status(200).json({ success: true, results });
     }
   });
 });
@@ -117,6 +133,19 @@ app.post('/api/setUserType', (req, res) => {
   const { type_name } = req.body;
   const query = 'INSERT INTO user_type (type_name) VALUES (?)';
   connection.query(query, [type_name], (err, results) => {
+    if (err) {
+      console.error('Error storing User Type:', err);
+      res.status(500).json({ error: 'Error storing User Type' });
+      return;
+    }
+    res.status(201).json({ message: 'User Type stored successfully' });
+  });
+});
+
+app.post('/api/updateSkills', (req, res) => {
+  const { skills, userId } = req.body;
+  const query = `UPDATE users SET user_skills = '${skills}' WHERE id = ${userId}`;
+  connection.query(query, (err, results) => {
     if (err) {
       console.error('Error storing User Type:', err);
       res.status(500).json({ error: 'Error storing User Type' });
