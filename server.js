@@ -129,6 +129,40 @@ app.post('/api/userType', (req, res) => {
   });
 });
 
+app.post('/api/showPercentage', (req, res) => {
+  const {userId} = req.body;
+  const query = 'SELECT * FROM setpercentage where user_id= ?';
+  connection.query(query,[userId], (err, results) => {
+    if (err) {
+      console.error('Error getting user type', err);
+      res.status(500).json({ error: 'Error getting user type' });
+      return;
+    }
+    if (results.length === 0) {
+      res.status(401).json({ error: 'No user type Found' });
+    } else {
+      res.status(200).json({ success: true, results });
+    }
+  });
+});
+
+app.post('/api/savePercentage', (req, res) => {
+  const { user_id, skill_id, percentage } = req.body;
+  const query = 'INSERT INTO setpercentage (user_id, skill_id, percentage) VALUES (?, ?, ?)';
+  connection.query(query,[user_id, skill_id, percentage], (err, results) => {
+    if (err) {
+      console.error('Error getting user type', err);
+      res.status(500).json({ error: 'Error getting user type' });
+      return;
+    }
+    if (results.length === 0) {
+      res.status(401).json({ error: 'No user type Found' });
+    } else {
+      res.status(200).json({ success: true, results });
+    }
+  });
+});
+
 app.post('/api/setUserType', (req, res) => {
   const { type_name } = req.body;
   const query = 'INSERT INTO user_type (type_name) VALUES (?)';
